@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Times Tests</title>
+        <link rel="stylesheet" href="style.css">
+        <style>
+            .options .section {
+                margin-bottom: 0.8em;
+            }
+            .options {
+                margin-bottom: 3em;
+            }
+            section {
+                display: grid;
+                grid-template-columns: repeat(10, 2em);
+                grid-column-gap: 2em;
+                grid-row-gap: 1em;
+            }
+            section + section {
+                margin-top: 6em;
+            }
+            x-problem {
+                place-self: center;
+                font-variant-numeric: tabular-nums;
+                display: grid;
+                grid-template-rows: 1fr 1fr 2fr;
+                grid-template-columns: 1em 1em;
+            }
+            x-problem::after {
+                content: "";
+                grid-column: 1 / 3;
+                grid-row: 3 / 4;
+                border-top: 1px solid black;
+            }
+            x-top {
+                grid-column: 2 / 3;
+                grid-row: 1 / 2;
+                text-align: right;
+            }
+            x-bottom {
+                grid-column: 2 / 3;
+                grid-row: 2 / 3;
+                text-align: right;
+            }
+            x-op {
+                grid-column: 1 / 2;
+                grid-row: 2 / 3;
+            }
+
+            @media print {
+                .options {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="options">
+            <div class="section">
+                <div><label><input type="checkbox" id="add"> Addition</label></div>
+                <div><label>Min: <input type="number" value="2" id="addmin"></label></div>
+                <div><label>Max: <input type="number" value="10" id="addmax"></label></div>
+            </div>
+            <div class="section">
+                <div><label><input type="checkbox" checked id="sub"> Subtraction</label></div>
+                <div><label>Min: <input type="number" value="3" id="submin"></label></div>
+                <div><label>Max: <input type="number" value="19" id="submax"></label></div>
+            </div>
+            <div class="section">
+                <div><label><input type="checkbox" id="mult"> Multiplication</label></div>
+                <div><label>Min: <input type="number" value="2" id="multmin"></label></div>
+                <div><label>Max: <input type="number" value="9" id="multmax"></label></div>
+            </div>
+            <div>
+                <button id="regenerate">Go</button>
+            </div>
+        </div>
+        <section id="upper"></section>
+        <section id="lower"></section>
+
+        <script>
+            let settings = getSettings()
+            createProblems(settings, document.querySelector('#upper'))
+            createProblems(settings, document.querySelector('#lower'))
+
+            document.getElementById("regenerate").addEventListener('click', () => {
+                let settings = getSettings()
+                createProblems(settings, document.querySelector('#upper'))
+                createProblems(settings, document.querySelector('#lower'))
+            }, false);
+
+            function getSettings() {
+                return {
+                    add: document.querySelector("#add").checked,
+                    addmin: parseInt(document.querySelector("#addmin").value),
+                    addmax: parseInt(document.querySelector("#addmax").value),
+                    sub: document.querySelector("#sub").checked,
+                    submin: parseInt(document.querySelector("#submin").value),
+                    submax: parseInt(document.querySelector("#submax").value),
+                    mult: document.querySelector("#mult").checked,
+                    multmin: parseInt(document.querySelector("#multmin").value),
+                    multmax: parseInt(document.querySelector("#multmax").value),
+                }
+            }
+
+            function randomProblem(settings) {
+                let rands = []
+                if (settings.add) {
+                    rands.push(randomAdditionProblem)
+                }
+                if (settings.sub) {
+                    rands.push(randomSubtractionProblem)
+                }
+                if (settings.mult) {
+                    rands.push(randomMultiplicationProblem)
+                }
+                if (rands.length == 0) {
+                    return {
+                        top: "0",
+                        bottom: "0",
+                        op: "+",
+                    }
+                }
+
+                let index = Math.floor(Math.random() * rands.length)
+                return rands[index](settings)
+            }
+
+            function randomAdditionProblem(settings) {
+                let min = settings.addmin;
+                let max = settings.addmax;
+                let range = max - min + 1;
+                let top = Math.floor(Math.random() * range + min);
+                let bottom = Math.floor(Math.random() * range + min);
+                return {
+                    top: top,
+                    bottom: bottom,
+                    op: '+',
+                }
+            }
+
+            function randomSubtractionProblem(settings) {
+                let min = settings.submin;
+                let max = settings.submax;
+                let topMin = min * 2;
+                let topMax = max;
+                let topRange = topMax - topMin + 1;
+                let top = Math.floor(Math.random() * topRange + topMin);
+                let bottomMin = min;
+                let bottomMax = top - min;
+                let bottomRange = bottomMax - bottomMin + 1;
+                let bottom = Math.floor(Math.random() * bottomRange + bottomMin);
+                return {
+                    top: top,
+                    bottom: bottom,
+                    op: '\u2212',
+                }
+            }
+
+            function randomMultiplicationProblem(settings) {
+                let min = settings.multmin;
+                let max = settings.multmax;
+                let range = max - min + 1;
+                let top = Math.floor(Math.random() * range + min);
+                let bottom = Math.floor(Math.random() * range + min);
+                return {
+                    top: top,
+                    bottom: bottom,
+                    op: '\u00d7',
+                }
+            }
+
+            function createProblems(settings, root) {
+                while (root.firstChild) {
+                    root.removeChild(root.firstChild)
+                }
+                for (let i = 0; i < 40; i++) {
+                    createProblem(settings, root)
+                }
+            }
+
+            function createProblem(settings, root) {
+                let p = randomProblem(settings)
+                let problem = document.createElement('x-problem')
+                let top = document.createElement('x-top')
+                top.textContent = p.top.toString();
+                let op = document.createElement('x-op')
+                op.textContent = p.op;
+                let bottom = document.createElement('x-bottom')
+                bottom.textContent = p.bottom.toString();
+                problem.appendChild(top)
+                problem.appendChild(op)
+                problem.appendChild(bottom)
+                root.appendChild(problem)
+            }
+        </script>
+    </body>
+</html>
